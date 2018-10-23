@@ -11,7 +11,7 @@ import argparse
 import math
  
 PSEUDOCOUNT_MULTIPLIER = 0
-def ewhole(alignments,probability): #toDo FIND A PROBABILITY TABLE
+def ewhole(alignments,pamMatrix):
     rows = len(alignments)
     col = len(alignments[0].seq)
     gap = [col]
@@ -57,11 +57,11 @@ def ewhole(alignments,probability): #toDo FIND A PROBABILITY TABLE
         for p in range(col):#j is the positon
             if gap[p]:
                 break
-            aaPseudocount[p][aa] = pseudocount[p]*probability[aa]
+            aaPseudocount[p][aa] = pseudocount[p]*pamMatrix[aa]
             aaAjusted[p][aa] = aaTotal[aa]/(aaTotal[aa]+pseudocount[p])*aaCount[p][aa]/aaTotal[p]+pseudocount[p]/(aaTotal[aa]+pseudocount[p])*aaPseudocount/pseudocount[aa]
     for aa in range(col):               #Finds Family Entropy
         for p in range(len(aaCount[0])):
-                famEntropy[aa] += math.log((aaCount[aa][p]/aaTotal[aa])/probability[p],2)                                
+                famEntropy[aa] += math.log((aaCount[aa][p]/aaTotal[aa])/pamMatrix[p],2)                                              
 def grpent(alignments,group,pamMatrix):
     rows = len(alignments)
     col = len(alignments[0].seq)
