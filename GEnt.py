@@ -12,47 +12,18 @@ import math
  
 PSEUDOCOUNT_MULTIPLIER = 0
 def ewhole(alignments,pamMatrix):
-    rows = len(alignments)
     col = len(alignments[0].seq)
-    gap = [col]
-    aaCount = [col][20]
-    aaTotal = [col]
-    consensus= [col]
-    pseudocount = [col]
+    gap = getRaw(alignments[1])
+    aaCount = getRaw(alignments[0])
+    consensus = getConsensus(alignments)
+    aaTotal = getCountPCount(alignments)[0]
+    pseudocount = getCountPCount(alignments)[1]
     aaPseudocount = [col][20]
     aaAjusted = [col][20]
     famEntropy = [col]
 
-    for aa in range(col):#i is the length of the sequence
-        for p in range (rows):  #j is the number of alignments
-            char = (alignments[p].seq)[aa]
-            if char == '.':                 #Check for Gaps
-                gap[aa] = True
-                break
-            else:
-                gap = False
-                aaCount[aa][remNPC(char)]+=1     #Takes ascii value of char to avoid a much longer if statment complex to figur out what to
-                                                #increment If you didn't do stuff with ascii, don't mess with this.
-    for aa in range(len(aaCount[0])):
-        maxV = 0
-        temp = ''
-        for p in range(col):       #Finds Consensus AA
-            if gap[aa]:
-                consensus[aa] = '.'
-                break
-            if maxV < aaCount[p][aa]:
-                temp = retAA(j)
-                maxV = aaCount[p][aa]
-        consensus[aa] = temp
-    for aa in range(len(aaCount[0])):        #Finds total AA and pseudocount total
-        acids = 0
-        for p in range(col):
-            if gap[aa]:
-                break
-            if aaCount[p][aa] > 0:
-                acids +=1
-        aaTotal[aa] = acids
-        pseudocount[aa] = acids*PSEUDOCOUNT_MULTIPLIER
+    
+        
     for aa in range(len(aaCount[0])): #i is amino acid               Finds Ajusted values for count and individual pseudocount
         for p in range(col):#j is the positon
             if gap[p]:
@@ -61,78 +32,27 @@ def ewhole(alignments,pamMatrix):
             aaAjusted[p][aa] = aaTotal[aa]/(aaTotal[aa]+pseudocount[p])*aaCount[p][aa]/aaTotal[p]+pseudocount[p]/(aaTotal[aa]+pseudocount[p])*aaPseudocount/pseudocount[aa]
     for aa in range(col):               #Finds Family Entropy
         for p in range(len(aaCount[0])):
-                famEntropy[aa] += math.log((aaCount[aa][p]/aaTotal[aa])/pamMatrix[p],2)                                              
-def grpent(alignments,group,pamMatrix):
-    rows = len(alignments)
+                famEntropy[aa] += math.log((aaCount[aa][p]/aaTotal[aa])/pamMatrix[p],2) 
+
+                
+def grpent(inGroup,outGroup,alignments,pamMatrix):
     col = len(alignments[0].seq)
-    aaCount = [col][20]
-    aaCountIn = [col][20]
-    aaCountOut = [col][20]
-    consensusIn = [col]
-    consensusOut = [col]
-    aaTotalIn  = [col]
-    aaTotalOut = [col]
-    psTotalIn = [col]
-    psTotalOut = [col]
+    aaCount = getRaw(alignments[0])
+    aaCountIn = getRaw(inGroup[0])
+    aaCountOut = getRaw(outGroup[0])
+    consensusIn = getConsensus(inGroup)
+    consensusOut = getConsensus(outGroup)
+    aaTotalIn  = getCountPCount(inGroup)[0]
+    aaTotalOut = getCountPCount(outGroup)[0]
+    psTotalIn = getCountPCount(inGroup)[1]
+    psTotalOut = getCountPCount(outGroup)[1]
     aapsTotalIn = [col][20]    
     aapsTotalOut = [col][20]
-    gap = [col]
+    gap = getConsensus(alignments)
     aaAjustedIn = [col][20]
     aaAjustedOut = [col][20]
     groupEntropy = [col]
-    for p in range(col):#i is the length of the sequence
-        for a in range (rows):  #j is the number of alignments
-            char = (alignments[a].seq)[p]
-            if char == '.':                 #Check for Gaps
-                gap[p] = True
-                break
-            else:
-                gap = False
-                aaCount[p][remNPC(char)]+=1     #Takes ascii value of char to avoid a much longer if statment complex to figur out what to
-                                                #increment If you didn't do stuff with ascii, don't mess with this.
-    for aa in range(len(aaCountIn[0])):
-        maxV = 0
-        temp = ''
-        for p in range(len(aaCountIn)):
-            if gap[aa]:
-                consensusIn[aa] = '.'
-                break
-            if maxV < aaCountIn[p][aa]:
-                temp = retAA(j)
-                maxV = aaCountIn[p][aa]
-        consensusIn[aa] = temp
-        for aa in range(len(aaCountOut[0])):
-            maxV = 0
-            temp = ''
-            for p in range(len(aaCountOut)):
-                if gap[aa]:
-                    consensusOut[aa] = '.'
-                    break
-                if maxV < aaCountOut[p][aa]:
-                    temp = retAA(p)
-                    maxV = aaCountOut[p][aa]
-            consensusOut[aa] = temp        
-    for aa in range(len(aaCountIn[0])):        #Finds total AA and pseudocount total
-        acids = 0
-        for p in range(len(aaCountIn)):
-            if gap[aa]:
-                break
-            if aaCountIn[p][aa] > 0:
-                acids +=1
-                
-        aaTotalIn[aa] = acids
-        psTotalIn[aa] = acids*PSEUDOCOUNT_MULTIPLIER
-        
-    for aa in range(len(aaCountOut[0])):        #Finds total AA and pseudocount total
-        acids = 0
-        for p in range(len(aaCountOut)):
-            if gap[aa]:
-                break
-            if aaCountOut[p][aa] > 0:
-                acids +=1
-        aaTotalOut[aa] = acids
-        psTotalOut[aa] = acids*PSEUDOCOUNT_MULTIPLIER
-        
+
     for aa in range(len(aaCountOut[0])): #i is amino acid               Finds Ajusted values for count and individual pseudocount
         for p in range(len(aaCountOut)):#j is the positon
             if gap[p]:
@@ -145,8 +65,20 @@ def grpent(alignments,group,pamMatrix):
         for p in range(len(aaCount[0])):
             groupEntropy[aa] += (aaCountIn[aa][p]-aaCountOut[aa]) * math.log((aaCountIn[aa][p]/aaCountOut[aa]))     
 def crval(group):
+    rows = len(group)
+    col = len(group[0].seq)
+    gap = getRaw(group)[1]
+    aaCount = getRaw(group)[0]
+    aaTotal = [col]
+    consensus= getConsensus(alignments)
+    pseudocount = [col]
+    aaPseudocount = [col][20]
+    aaAjusted = [col][20]
+    famEntropy = [col]
+    
     if(len(group)<3):
         exit
+        
     
     
     
@@ -198,3 +130,52 @@ def retAA(intASCII):
     if intASCII > 22:
         intASCII+=1
         return chr(intASCII+65)
+def getRaw(alignments):
+    rows = len(alignments)
+    col = len(alignments[0].seq)
+    gap = [col]
+    aaCount = [col][20]
+    for aa in range(col):#i is the length of the sequence
+        for p in range (rows):  #j is the number of alignments
+            char = (alignments[p].seq)[aa]
+            if char == '.':                 #Check for Gaps
+                gap[aa] = True
+                break
+            else:
+                gap = False
+                aaCount[aa][remNPC(char)]+=1
+    return {aaCount,gap}
+def getConsensus(alignments):
+    col = len(alignments[0])
+    aaCount = getRaw(alignments[0])
+    gap = getRaw(alignments[1])
+    consensus = [col]
+    for aa in range(len(aaCount[0])):
+        maxV = 0
+        temp = ''
+        for p in range(col):       #Finds Consensus AA
+            if gap[aa]:
+                consensus[aa] = '.'
+                break
+            if maxV < aaCount[p][aa]:
+                temp = retAA(p)
+                maxV = aaCount[p][aa]
+        consensus[aa] = temp
+        return consensus
+def getCountPCount(alignments):
+    col = len(alignments[0])
+    aaCount = getRaw(alignments[0])
+    gap = getRaw(alignments[1])
+    pseudocount = [col]
+    aaTotal = [col]
+
+    for aa in range(len(aaCount[0])):        #Finds total AA and pseudocount total
+        acids = 0
+        for p in range(col):
+            if gap[aa]:
+                break
+            if aaCount[p][aa] > 0:
+                acids +=1
+        aaTotal[aa] = acids
+        pseudocount[aa] = acids*PSEUDOCOUNT_MULTIPLIER
+    return {aaTotal,pseudocount}
