@@ -19,7 +19,6 @@ def ewhole(alignments,pamMatrix,rProb):
     aaCount = temp[0]
     consensus = getConsensus(alignments)
     temp = getCountPCount(alignments)
-    aaTotal = temp[0]
     pseudocount = temp[1]
     aaPseudocount = [[0] * 20 for i in range (col)]
     aaAjusted = [[0] * 20 for i in range (col)]
@@ -31,21 +30,20 @@ def ewhole(alignments,pamMatrix,rProb):
             if gap[aa]:
                 break
             aaPseudocount[aa][p] = pseudocount[aa]*float(rProb[p])
-            aaAjusted[aa][p] = aaTotal[aa]/(aaTotal[aa]+pseudocount[aa])*aaCount[aa][p]/aaTotal[aa]+pseudocount[aa]/(aaTotal[aa]+pseudocount[aa])*aaPseudocount[aa][p]/pseudocount[aa]
+            aaAjusted[aa][p] = len(alignments)/(len(alignments)+pseudocount[aa])*aaCount[aa][p]/len(alignments)+pseudocount[aa]/(len(alignments)+pseudocount[aa])*aaPseudocount[aa][p]/pseudocount[aa]
     for aa in range(col):               #Finds Family Entropy
         for p in range(20):
             if gap[aa]:
                 break
-            odds = aaAjusted[aa][p] / sum(aaAjusted[aa])
-            famEntropy[aa] += odds*math.log(odds/float(rProb[p]),2)
-                
+            famEntropy[aa] += aaAjusted[aa][p]*math.log(aaAjusted[aa][p]/float(rProb[p]),2)
+            
     return [gap,consensus,famEntropy]
 
-def grpent(inGroup,outGroup,alignments,pamMatrix):
+def grpent(inGroup,outGroup,alignments,rProb):
     col = len(alignments[0].seq)
     aaCount = getRaw(alignments)[0]
     aaCountIn = getRaw(inGroup)[0]
-    gap = getRaw(inGroup)[1]
+    gap = getRaw(alignments)[1]
     aaCountOut = getRaw(outGroup)[0]
     consensusIn = getConsensus(inGroup)
     consensusOut = getConsensus(outGroup)
@@ -53,72 +51,36 @@ def grpent(inGroup,outGroup,alignments,pamMatrix):
     aaTotalOut = getCountPCount(outGroup)[0]
     psTotalIn = getCountPCount(inGroup)[1]
     psTotalOut = getCountPCount(outGroup)[1]
-    aapsTotalIn = ajustCounts(inGroup,pamMatrix)[0]
-    aapsTotalOut = ajustCounts(outGroup,pamMatrix)[0]
-    aaAjustedIn = ajustCounts(inGroup,pamMatrix)[1]
-    aaAjustedOut = ajustCounts(outGroup,pamMatrix)[1]
-    ingroupEntropy = [col]
-    outgroupEntropy = [col]
-    totalgroupEntropy = [col]
+    aapsTotalIn = ajustCounts(inGroup,rProb)[0]
+    aapsTotalOut = ajustCounts(outGroup,rProb)[0]
+    aaAjustedIn = ajustCounts(inGroup,rProb)[1]
+    aaAjustedOut = ajustCounts(outGroup,rProb)[1]
+    ingroupEntropy = [0]*col
+    outgroupEntropy = [0]*col
+    totalgroupEntropy = [0]*col
 
     
     for aa in range(col):               #Finds Family Entropy
-        for p in range(len(aaCount[0])):
+        for p in range(20):
             if gap[aa]:
                 break
-            ingroupEntropy[aa] = (aaCountIn[aa][p]-aaCountOut[aa]) * math.log((aaCountIn[aa][p]/aaCountOut[aa]))  
-            outgroupEntropy[aa] = (aaCountIn[aa][p]-aaCountOut[aa]) * math.log((aaCountIn[aa][p]/aaCountOut[aa]))  
-            totalgroupEntropy[aa] = ingroupEntropy[aa] + -outgroupEntropy[aa]
-    return {outgroupEntropy,ingroupEntropy,totalgroupEntropy,consensusIn}
-def crval(group):
-    rows = len(group)
-    col = len(group[0].SeqRecord)
-    gap = getRaw(group)[1]
-    aaCount = getRaw(group)[0]
-    aapsTotal = getCountPCount(group)[1]
-    aaTotal = getCountPCount(group)[0]
-    consensus= getConsensus(alignments)
-    pseudocount = ajustCounts(group,pamMatrix)[0]
-    aaAjusted = ajustCounts(group,pamMatrix)[1]
-    
-    if(len(group)<3):
-        exit
-        
-    
-    
-    
-def zscore(alignments):
-    return ""
-def twoent():
-    return ""    
+            ingroupEntropy[aa] += aaAjustedIn[aa][p]*math.log(aaAjustedIn[aa][p]/aaAjustedOut[aa][p],2)  
+            outgroupEntropy[aa] += aaAjustedOut[aa][p]*math.log(aaAjustedOut[aa][p]/aaAjustedIn[aa][p],2)
+        totalgroupEntropy[aa] = ingroupEntropy[aa] + outgroupEntropy[aa]
+
+    return [outgroupEntropy,ingroupEntropy,totalgroupEntropy,consensusIn,consensusOut]  
     
 #Helper Functions
 def remNPC(char_AA):
-    aaVal = ord(char_AA)-65
-    if aaVal > 0:
-        aaVal-=1
-    if aaVal > 7:
-        aaVal-=1
-    if aaVal > 11:
-        aaVal-=1
-    if aaVal > 16:
-        aaVal-=1
-    if aaVal > 18:
-        aaVal-=1
+    temp = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
+    for i in range(20):
+        if char_AA == temp[i]:
+            aaVal = i
     return aaVal
 
 def retAA(intASCII):
-    if intASCII > 0:
-        intASCII+=1
-    if intASCII > 8:
-        intASCII+=1
-    if intASCII > 13:
-        intASCII+=1
-    if intASCII > 19:
-        intASCII+=1
-    if intASCII > 22:
-        intASCII+=1
-    return chr(intASCII+65)
+    temp = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
+    return temp[intASCII]
 def getRaw(alignments):
     rows = len(alignments)
     col = len(alignments[0].seq)
@@ -132,15 +94,17 @@ def getRaw(alignments):
                 gap[aa] = True
                 
     for aa in range(col):#i is the length of the sequence
+        temp = ""
         for p in range (rows):  #j is the number of alignments
             char = (alignments[p].seq)[aa]
 
             if(gap[aa] != True):
                 temp +=char
+                t = remNPC(char)
                 aaCount[aa][remNPC(char)]+=1
                 
     return [aaCount,gap]
-def getConsensus(alignments):
+def getConsensus(alignments,aaCount):
     col = len(alignments[0].seq)
     aaCount = getRaw(alignments)[0]
     gap = getRaw(alignments)[1]
@@ -152,7 +116,7 @@ def getConsensus(alignments):
             if gap[aa]:
                 consensus[aa] = '.'
                 break
-            elif maxV < aaCount[aa][p]:
+            elif maxV <= aaCount[aa][p]:
                 temp = retAA(p)
                 maxV = aaCount[aa][p]
                 consensus[aa] = temp        
@@ -176,21 +140,23 @@ def getCountPCount(alignments):
         aaTotal[aa] = acids
         pseudocount[aa] = acids* PSEUDOCOUNT_MULTIPLIER
     return [aaTotal,pseudocount]
-def ajustCounts(sequences,pamMatrix):
+def ajustCounts(sequences,odds):
+    col = len(sequences[0].seq)
     aaTotal = getCountPCount(sequences)[0]
+    aaPCount = getCountPCount(sequences)[1]
     aaCount = getRaw(sequences)[0]
     gap = getRaw(sequences)[1]
-    aapsTotal = [len(sequences[0])][20]
-    aaAjusted = [len(sequences[0])][20]
-    psTotal = getCountPCount(sequences)[1]
+    aapsTotal = [[0] * 20 for i in range (col)]
+    aaAjusted = [[0] * 20 for i in range (col)]
 
-    for aa in range(len(aaCount[0])): #i is amino acid               Finds Ajusted values for count and individual pseudocount
-        for p in range(len(aaCount)):#j is the positon
-            if gap[p]:
+    for aa in range(col): 
+        for p in range(20):#j is the positon
+            if gap[aa]:
                 break
-            aapsTotal[aa][p] = aaCount[aa][p]/aaTotal[aa][p]*pamMatrix[aa][p]/sum(pamMatrix[p])
-            aaAjusted[aa][p] = (aaCount[aa][p]+aapsTotal[aa][p])/(aaTotal[aa][p]+psTotal[aa][p])
-    return {aapsTotal,aaAjusted}
+            aapsTotal[aa][p] = aaPCount[aa]*float(odds[p])
+            aaAjusted[aa][p] = len(sequences)/(len(sequences)+aaPCount[aa])*aaCount[aa][p]/len(sequences)+aaPCount[aa]/(len(sequences)+aaPCount[aa])*aapsTotal[aa][p]/aaPCount[aa]
+            
+    return [aapsTotal,aaAjusted]
 
 class groups(object):
     grpDict  = dict()
@@ -260,12 +226,12 @@ def main():
     groupNames = list(g.grpDict.keys())
     fe = ewhole(g.getAllGrouped(),matrix,freq_ran)
     for groupN in groupNames:
-        ge = grpent(g.getGroup(groupN)[0],g.getGroup(groupN)[1],r,matrix)
+        ge = grpent(g.getGroup(groupN)[0],g.getGroup(groupN)[1],g.getAllGrouped(),freq_ran)
         out = open(groupN + ".csv",'w')
-        out.write("Position,Family Entropy,Group Entropy,Partial Group Entropy,Partial Out Group Entropy,Highest Group AA,Highest Family AA")
-        for i in range(len(r)):
+        out.write("Position,Family Entropy,Group Entropy,Partial Group Entropy,Partial Out Group Entropy,Highest Group AA,Highest Family AA\n")
+        for i in range(len(fe[0])):
             if fe[0][i] == False:
-                out.write(i+','+fe[1][i] + ','+ge[2][i] + ','+ge[1][i] + ','+ge[0][i] + ','+ge[3][i] +','+fe[2][i])   
+                out.write(str(i+1)+','+str(fe[2][i]) + ','+str(ge[2][i]) + ','+str(ge[1][i]) + ','+str(ge[0][i]) + ','+str(ge[3][i]) +','+str(fe[1][i])+"\n")   
                 
 if __name__ == '__main__':
     main()
