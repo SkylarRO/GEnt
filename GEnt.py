@@ -104,7 +104,7 @@ def getRaw(alignments):
                 aaCount[aa][remNPC(char)]+=1
                 
     return [aaCount,gap]
-def getConsensus(alignments,aaCount):
+def getConsensus(alignments):
     col = len(alignments[0].seq)
     aaCount = getRaw(alignments)[0]
     gap = getRaw(alignments)[1]
