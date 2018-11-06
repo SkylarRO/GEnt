@@ -9,7 +9,9 @@ Created on Tue Oct  9 15:44:24 2018
 from Bio import AlignIO               # Read fasta files
 import argparse   
 import math
-import openpyxl                     # Write spreadsheets
+import time
+import sys
+
 
 global PSEUDOCOUNT_MULTIPLIER 
 def ewhole(alignments,pamMatrix,rProb):
@@ -41,18 +43,9 @@ def ewhole(alignments,pamMatrix,rProb):
 
 def grpent(inGroup,outGroup,alignments,rProb):
     col = len(alignments[0].seq)
-    aaCount = getRaw(alignments)[0]
-    aaCountIn = getRaw(inGroup)[0]
     gap = getRaw(alignments)[1]
-    aaCountOut = getRaw(outGroup)[0]
     consensusIn = getConsensus(inGroup)
     consensusOut = getConsensus(outGroup)
-    aaTotalIn  = getCountPCount(inGroup)[0]
-    aaTotalOut = getCountPCount(outGroup)[0]
-    psTotalIn = getCountPCount(inGroup)[1]
-    psTotalOut = getCountPCount(outGroup)[1]
-    aapsTotalIn = ajustCounts(inGroup,rProb)[0]
-    aapsTotalOut = ajustCounts(outGroup,rProb)[0]
     aaAjustedIn = ajustCounts(inGroup,rProb)[1]
     aaAjustedOut = ajustCounts(outGroup,rProb)[1]
     ingroupEntropy = [0]*col
@@ -100,7 +93,6 @@ def getRaw(alignments):
 
             if(gap[aa] != True):
                 temp +=char
-                t = remNPC(char)
                 aaCount[aa][remNPC(char)]+=1
                 
     return [aaCount,gap]
@@ -142,7 +134,6 @@ def getCountPCount(alignments):
     return [aaTotal,pseudocount]
 def ajustCounts(sequences,odds):
     col = len(sequences[0].seq)
-    aaTotal = getCountPCount(sequences)[0]
     aaPCount = getCountPCount(sequences)[1]
     aaCount = getRaw(sequences)[0]
     gap = getRaw(sequences)[1]
@@ -201,6 +192,7 @@ def matMake(matrix, input):
             matrix[i][j] = pow(float(matrix[i][j]),num)
     return matrix
 def main():
+    start_time = time.time()
     parser = argparse.ArgumentParser(
         description='Calculate group entropy')
     parser.add_argument('settings', type=str,
@@ -217,6 +209,7 @@ def main():
     MatrixName = (lines[3][lines[3].rfind(":")+2:len(lines[3])-1])
     matrix = open(MatrixName[:len(MatrixName)-3]+".dat").read()
     matrix = [item.split() for item in matrix.split('\n')[:-1]]
+    uUnGrouped = (lines[4][lines[4].rfind(":")+2:len(lines[4])-1])    
     freq_ran = matrix[20]
     matrix = matrix[0:19]
     matrix = matMake(matrix,MatrixName)
@@ -224,7 +217,10 @@ def main():
 
     g = groups(r,open(groupsName,'r'))
     groupNames = list(g.grpDict.keys())
-    fe = ewhole(g.getAllGrouped(),matrix,freq_ran)
+    if(uUnGrouped == "false"):
+        fe = ewhole(g.getAllGrouped(),matrix,freq_ran)
+    else:
+        fe = ewhole(r,matrix,freq_ran)
     for groupN in groupNames:
         ge = grpent(g.getGroup(groupN)[0],g.getGroup(groupN)[1],g.getAllGrouped(),freq_ran)
         out = open(groupN + ".csv",'w')
@@ -232,6 +228,6 @@ def main():
         for i in range(len(fe[0])):
             if fe[0][i] == False:
                 out.write(str(i+1)+','+str(fe[2][i]) + ','+str(ge[2][i]) + ','+str(ge[1][i]) + ','+str(ge[0][i]) + ','+str(ge[3][i]) +','+str(fe[1][i])+"\n")   
-                
+    sys.stdout.write("GEnt Complete in " + str(time.time()-start_time) + "\n")
 if __name__ == '__main__':
     main()
