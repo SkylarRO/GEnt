@@ -14,6 +14,7 @@ import sys
 
 
 global PSEUDOCOUNT_MULTIPLIER 
+global ERRORS
 def ewhole(alignments,pamMatrix,rProb):
     col = len(alignments[0].seq)
     temp =getRaw(alignments) 
@@ -65,7 +66,10 @@ def grpent(inGroup,outGroup,alignments,rProb):
     
 #Helper Functions
 def remNPC(char_AA):
+    if(char_AA == 'X'):
+        char_AA = 'A'
     temp = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
+    str(char_AA).capitalize()
     for i in range(20):
         if char_AA == temp[i]:
             aaVal = i
@@ -75,6 +79,7 @@ def retAA(intASCII):
     temp = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
     return temp[intASCII]
 def getRaw(alignments):
+    global ERRORS
     rows = len(alignments)
     col = len(alignments[0].seq)
     gap = [False]*col
@@ -93,6 +98,9 @@ def getRaw(alignments):
 
             if(gap[aa] != True):
                 temp +=char
+                if(temp == 'X'):
+                    ERRORS += ''.join["ERROR: At position ", str(aa+1), " in sequence ", str(p+1), " an X was replaced with an A.\n"]
+                    
                 aaCount[aa][remNPC(char)]+=1
                 
     return [aaCount,gap]
@@ -192,6 +200,8 @@ def matMake(matrix, input):
             matrix[i][j] = pow(float(matrix[i][j]),num)
     return matrix
 def main():
+    global ERRORS
+    ERRORS = ""
     start_time = time.time()
     parser = argparse.ArgumentParser(
         description='Calculate group entropy')
@@ -228,6 +238,12 @@ def main():
         for i in range(len(fe[0])):
             if fe[0][i] == False:
                 out.write(str(i+1)+','+str(fe[2][i]) + ','+str(ge[2][i]) + ','+str(ge[1][i]) + ','+str(ge[0][i]) + ','+str(ge[3][i]) +','+str(fe[1][i])+"\n")   
-    sys.stdout.write("GEnt Complete in " + str(time.time()-start_time) + "\n")
+    sys.stdout.write("GEnt Complete in " + str(time.time()-start_time) + " seconds\n")
+    out = open("GEnt.out",'w')
+    out.write("GEnt.py\n")
+    out.write("Written by Skylar Olson\n")
+    out.write("Based on An algorithm for identification and ranking of family-specific residues, applied to the ALDH3 family\n")
+    out.write("Written by John Hempel, John Perozich, Troy Wymore, and Hugh B. Nicholas\n")
+    out.writelines(ERRORS)
 if __name__ == '__main__':
     main()
