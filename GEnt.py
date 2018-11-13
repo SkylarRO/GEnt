@@ -15,7 +15,7 @@ import sys
 
 global PSEUDOCOUNT_MULTIPLIER 
 global ERRORS
-def ewhole(alignments,pamMatrix,rProb):
+def ewhole(alignments,pamMatrix,rProb):             #Calculates the family entropy
     col = len(alignments[0].seq)
     temp =getRaw(alignments) 
     gap = temp[1]
@@ -23,15 +23,15 @@ def ewhole(alignments,pamMatrix,rProb):
     consensus = getConsensus(alignments)
     temp = getCountPCount(alignments)
     pseudocount = temp[1]
-    aaPseudocount = [[0] * 20 for i in range (col)]
-    aaAjusted = [[0] * 20 for i in range (col)]
-    famEntropy = [0]*col
+    aaPseudocount = [[0] * 20 for i in range (col)] #Note the proper two dimentional list creation syntax
+    aaAjusted = [[0] * 20 for i in range (col)]     #If you no not do it this way, you will have a bunch 
+    famEntropy = [0]*col                            
+    #of linked columns or nothing at all
 
-        
-    for aa in range(col): #i               Finds Ajusted values for count and individual pseudocount
+    for aa in range(col):                           #Finds Ajusted values for count and individual pseudocount
         for p in range(20):
-            if gap[aa]:
-                break
+            if gap[aa]:                             #This prevents the program from calculating results for gapped positions
+                break                               #Removing this will cause a division by zero error
             aaPseudocount[aa][p] = pseudocount[aa]*float(rProb[p])
             aaAjusted[aa][p] = len(alignments)/(len(alignments)+pseudocount[aa])*aaCount[aa][p]/len(alignments)+pseudocount[aa]/(len(alignments)+pseudocount[aa])*aaPseudocount[aa][p]/pseudocount[aa]
     for aa in range(col):               #Finds Family Entropy
@@ -58,9 +58,9 @@ def grpent(inGroup,outGroup,alignments,rProb):
         for p in range(20):
             if gap[aa]:
                 break
-            ingroupEntropy[aa] += aaAjustedIn[aa][p]*math.log(aaAjustedIn[aa][p]/aaAjustedOut[aa][p],2)  
-            outgroupEntropy[aa] += aaAjustedOut[aa][p]*math.log(aaAjustedOut[aa][p]/aaAjustedIn[aa][p],2)
-        totalgroupEntropy[aa] = ingroupEntropy[aa] + outgroupEntropy[aa]
+            ingroupEntropy[aa] += aaAjustedIn[aa][p]*math.log(aaAjustedIn[aa][p]/aaAjustedOut[aa][p],2)     #These calculatipms are from the GENT paper
+            outgroupEntropy[aa] += aaAjustedOut[aa][p]*math.log(aaAjustedOut[aa][p]/aaAjustedIn[aa][p],2)   #They were one equation, but the sample results
+        totalgroupEntropy[aa] = ingroupEntropy[aa] + outgroupEntropy[aa]                                    #Split between ingroup and outgroup entropy
 
     return [outgroupEntropy,ingroupEntropy,totalgroupEntropy,consensusIn,consensusOut]  
     
@@ -152,9 +152,8 @@ def ajustCounts(sequences,odds):
         for p in range(20):#j is the positon
             if gap[aa]:
                 break
-            aapsTotal[aa][p] = aaPCount[aa]*float(odds[p])
+            aapsTotal[aa][p] = aaPCount[aa]*float(odds[p]) #there is a much better forumla one might be able to use here.
             aaAjusted[aa][p] = len(sequences)/(len(sequences)+aaPCount[aa])*aaCount[aa][p]/len(sequences)+aaPCount[aa]/(len(sequences)+aaPCount[aa])*aapsTotal[aa][p]/aaPCount[aa]
-            
     return [aapsTotal,aaAjusted]
 
 class groups(object):
