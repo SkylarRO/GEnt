@@ -2,8 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Oct  9 15:44:24 2018
-
 @author: skylar
+Usage: python GEnt.py name.settings
+REQUIRES: Settings file, Groups File, lg.dat matrix
+Settings file contains filenames of the other
+reqired files which should be in the same directory as GEnt
+Sequence must be in fasta alignment format
+Gap characters should b '.'
 """
 
 from Bio import AlignIO               # Read fasta files
@@ -68,6 +73,8 @@ def grpent(inGroup,outGroup,alignments,rProb):
 def remNPC(char_AA):
     if(char_AA == 'X'):
         char_AA = 'A'
+        #If we did not replace the X with something, the column of data would be useless
+        #as only gapless positions are counted
     temp = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
     str(char_AA).capitalize()
     for i in range(20):
@@ -85,26 +92,27 @@ def getRaw(alignments):
     gap = [False]*col
     temp = ""
     aaCount = [[0]*20 for i in range(col)]
-    for aa in range(col):#i is the length of the sequence
-        for p in range (rows):  #j is the number of alignments
+    for aa in range(col):
+        for p in range (rows):
             char = (alignments[p].seq)[aa]
             if char == '.':                 #Check for Gaps
                 gap[aa] = True
                 
-    for aa in range(col):#i is the length of the sequence
+    for aa in range(col):
         temp = ""
-        for p in range (rows):  #j is the number of alignments
+        for p in range (rows):
             char = (alignments[p].seq)[aa]
 
             if(gap[aa] != True):
                 temp +=char
                 if(temp == 'X'):
                     ERRORS += ''.join["ERROR: At position ", str(aa+1), " in sequence ", str(p+1), " an X was replaced with an A.\n"]
-                    
+                    #Error document is used to keep track of anything which could harm the results.
                 aaCount[aa][remNPC(char)]+=1
-                
+                #This converts the char to a position value within the sublist
+                #which contains one column for each aa at that position
     return [aaCount,gap]
-def getConsensus(alignments):
+def getConsensus(alignments): #Checks most common aa in a position
     col = len(alignments[0].seq)
     aaCount = getRaw(alignments)[0]
     gap = getRaw(alignments)[1]
@@ -122,15 +130,15 @@ def getConsensus(alignments):
                 consensus[aa] = temp        
     return consensus
 
-def getCountPCount(alignments):
-    global PSEUDOCOUNT_MULTIPLIER
-    col = len(alignments[0].seq)
+def getCountPCount(alignments):     # Counts number of acids at a position and
+    global PSEUDOCOUNT_MULTIPLIER   # makes a pseudocount total for that
+    col = len(alignments[0].seq)    #position
     aaCount = getRaw(alignments)[0]
     gap = getRaw(alignments)[1]
     pseudocount = [0]*col
     aaTotal = [0]*col
 
-    for aa in range(col):        #Finds total AA and pseudocount total
+    for aa in range(col):      
         acids = 0
         for p in range(20):
             if gap[aa]:
@@ -140,8 +148,8 @@ def getCountPCount(alignments):
         aaTotal[aa] = acids
         pseudocount[aa] = acids* PSEUDOCOUNT_MULTIPLIER
     return [aaTotal,pseudocount]
-def ajustCounts(sequences,odds):
-    col = len(sequences[0].seq)
+def ajustCounts(sequences,odds):  #Gets pseudocount for an aa at all gapless positions
+    col = len(sequences[0].seq)            
     aaPCount = getCountPCount(sequences)[1]
     aaCount = getRaw(sequences)[0]
     gap = getRaw(sequences)[1]
@@ -156,9 +164,9 @@ def ajustCounts(sequences,odds):
             aaAjusted[aa][p] = len(sequences)/(len(sequences)+aaPCount[aa])*aaCount[aa][p]/len(sequences)+aaPCount[aa]/(len(sequences)+aaPCount[aa])*aapsTotal[aa][p]/aaPCount[aa]
     return [aapsTotal,aaAjusted]
 
-class groups(object):
-    grpDict  = dict()
-    def __init__(self,alignments,groupFile):
+class groups(object):                       #Group handler that uses a dictionary
+    grpDict  = dict()                       #shouldn't be messed with without 
+    def __init__(self,alignments,groupFile):#learning about dictionaries
         temp = ''
         src = ''
         for line in groupFile:
@@ -209,7 +217,8 @@ def main():
     f = open(parser.parse_args().settings,'r')
     lines = f.readlines()
     global PSEUDOCOUNT_MULTIPLIER
-    PSEUDOCOUNT_MULTIPLIER = float(lines[2][lines[2].rfind(":")+2:len(lines[2])-1])
+    PSEUDOCOUNT_MULTIPLIER = float(lines[2][lines[2].rfind(":")+2:len(lines[2])-1]) 
+    #This pattern is repeated for finding text in the settings file
 
     f.close()
     alignmentName  = (lines[0][lines[0].rfind(":")+2:len(lines[0])-1])
