@@ -95,7 +95,7 @@ def getRaw(alignments):
     for aa in range(col):
         for p in range (rows):
             char = (alignments[p].seq)[aa]
-            if char == '.':                 #Check for Gaps
+            if char == '.' or char == '-':                 #Check for Gaps
                 gap[aa] = True
                 
     for aa in range(col):
