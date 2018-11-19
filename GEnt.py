@@ -8,7 +8,7 @@ REQUIRES: Settings file, Groups File, lg.dat matrix
 Settings file contains filenames of the other
 reqired files which should be in the same directory as GEnt
 Sequence must be in fasta alignment format
-Gap characters should b '.'
+Gap characters should b '.' but '-' is acceptable
 """
 
 from Bio import AlignIO               # Read fasta files
