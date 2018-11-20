@@ -20,7 +20,7 @@ import sys
 
 global PSEUDOCOUNT_MULTIPLIER 
 global ERRORS
-global REFRENCE
+global REFRENCE     #see line 198
 def ewhole(alignments,pamMatrix,rProb):             #Calculates the family entropy
     col = len(alignments[0].seq)
     temp =getRaw(alignments) 
@@ -176,29 +176,31 @@ def refPosition():              #A very simple way of finding the refrence posit
             out[i] = count
     return out
             
-class groups(object):                       #Group handler that uses a dictionary
-    grpDict  = dict()                       #shouldn't be messed with without 
-    def __init__(self,alignments,groupFile):#learning about dictionaries
-        temp = ''
+class groups(object):                               #Group handler that uses a dictionary
+    grpDict  = dict()                               #shouldn't be messed with without 
+    def __init__(self,alignments,groupFile):        #learning about dictionaries
+        temp = ''                                   #Messing with this will break things everywhere
+                                                    #with seemingly unrelated errors
         global REFRENCE
         src = ''
-        for line in groupFile:
+        for line in groupFile:                      #Finds group names and adds a list representing that group to the dictionary
             comp = line[0:5]
             if comp == "Group":
                 self.grpDict[line[6:len(line)-1]] = list()
-        groupFile.seek(0)
-        for line in groupFile:
-            if line[0:5] == "Group":
+        groupFile.seek(0)                           #Goes back to the start of the file
+        for line in groupFile:                      #Searches through the group file
+            if line[0:5] == "Group":                #Switches what group sequences are being added to
                 temp = line[6:len(line)-1]
-            elif line[0:1] != '//' and temp != '':
-                src = line[:len(line)-1]
-                for i in range(len(alignments)):
+            elif line[0:1] != '//' and temp != '':  
+                src = line[:len(line)-1]            #Gets name of aa in group file
+                for i in range(len(alignments)):    #Searches for the alignment with the same name as the group
                     t = alignments[i].name
-                    if isinstance(REFRENCE, str) and t == REFRENCE:
+                    if isinstance(REFRENCE, str) and t == REFRENCE: #Hijacks the search to find the refrence sequence
                         REFRENCE = alignments[i]
                     if t == src:
-                        self.grpDict[temp].append(alignments[i])
+                        self.grpDict[temp].append(alignments[i]) #Appends a sequence to it's group's list in the dictionary
                         break
+                    
     def getGroup(self,groupName):
         inGroup = []
         outGroup = []
