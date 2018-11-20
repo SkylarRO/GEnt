@@ -165,9 +165,9 @@ def ajustCounts(sequences,odds):  #Gets pseudocount for an aa at all gapless pos
             aapsTotal[aa][p] = aaPCount[aa]*float(odds[p]) #there is a much better forumla one might be able to use here.
             aaAjusted[aa][p] = len(sequences)/(len(sequences)+aaPCount[aa])*aaCount[aa][p]/len(sequences)+aaPCount[aa]/(len(sequences)+aaPCount[aa])*aapsTotal[aa][p]/aaPCount[aa]
     return [aapsTotal,aaAjusted]
-def refPosition():
-    global REFRENCE
-    col = len(REFRENCE.seq)    
+def refPosition():              #A very simple way of finding the refrence position that
+    global REFRENCE             #works by keeping a count that's only incremented for gapless positions
+    col = len(REFRENCE.seq)     #then making a list of this count
     out = [0]*col        
     count = 0
     for i in range(col):
