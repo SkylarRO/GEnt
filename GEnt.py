@@ -20,6 +20,7 @@ import sys
 
 global PSEUDOCOUNT_MULTIPLIER 
 global ERRORS
+global REFRENCE
 def ewhole(alignments,pamMatrix,rProb):             #Calculates the family entropy
     col = len(alignments[0].seq)
     temp =getRaw(alignments) 
@@ -48,6 +49,7 @@ def ewhole(alignments,pamMatrix,rProb):             #Calculates the family entro
     return [gap,consensus,famEntropy]
 
 def grpent(inGroup,outGroup,alignments,rProb):
+    global REFRENCE
     col = len(alignments[0].seq)
     gap = getRaw(alignments)[1]
     consensusIn = getConsensus(inGroup)
@@ -57,7 +59,7 @@ def grpent(inGroup,outGroup,alignments,rProb):
     ingroupEntropy = [0]*col
     outgroupEntropy = [0]*col
     totalgroupEntropy = [0]*col
-
+    RefPos = refPosition()
     
     for aa in range(col):               #Finds Family Entropy
         for p in range(20):
@@ -67,7 +69,7 @@ def grpent(inGroup,outGroup,alignments,rProb):
             outgroupEntropy[aa] += aaAjustedOut[aa][p]*math.log(aaAjustedOut[aa][p]/aaAjustedIn[aa][p],2)   #They were one equation, but the sample results
         totalgroupEntropy[aa] = ingroupEntropy[aa] + outgroupEntropy[aa]                                    #Split between ingroup and outgroup entropy
 
-    return [outgroupEntropy,ingroupEntropy,totalgroupEntropy,consensusIn,consensusOut]  
+    return [outgroupEntropy,ingroupEntropy,totalgroupEntropy,consensusIn,consensusOut,RefPos]  
     
 #Helper Functions
 def remNPC(char_AA):
@@ -163,11 +165,22 @@ def ajustCounts(sequences,odds):  #Gets pseudocount for an aa at all gapless pos
             aapsTotal[aa][p] = aaPCount[aa]*float(odds[p]) #there is a much better forumla one might be able to use here.
             aaAjusted[aa][p] = len(sequences)/(len(sequences)+aaPCount[aa])*aaCount[aa][p]/len(sequences)+aaPCount[aa]/(len(sequences)+aaPCount[aa])*aapsTotal[aa][p]/aaPCount[aa]
     return [aapsTotal,aaAjusted]
-
+def refPosition():
+    global REFRENCE
+    col = len(REFRENCE.seq)    
+    out = [0]*col        
+    count = 0
+    for i in range(col):
+        if REFRENCE.seq[i] != '.' and REFRENCE.seq[i] != '.':
+            count+=1
+            out[i] = count
+    return out
+            
 class groups(object):                       #Group handler that uses a dictionary
     grpDict  = dict()                       #shouldn't be messed with without 
     def __init__(self,alignments,groupFile):#learning about dictionaries
         temp = ''
+        global REFRENCE
         src = ''
         for line in groupFile:
             comp = line[0:5]
@@ -181,6 +194,8 @@ class groups(object):                       #Group handler that uses a dictionar
                 src = line[:len(line)-1]
                 for i in range(len(alignments)):
                     t = alignments[i].name
+                    if isinstance(REFRENCE, str) and t == REFRENCE:
+                        REFRENCE = alignments[i]
                     if t == src:
                         self.grpDict[temp].append(alignments[i])
                         break
@@ -208,6 +223,7 @@ def matMake(matrix, input):
     return matrix
 def main():
     global ERRORS
+    global REFRENCE
     ERRORS = ""
     start_time = time.time()
     parser = argparse.ArgumentParser(
@@ -232,9 +248,11 @@ def main():
     matrix = matrix[0:19]
     matrix = matMake(matrix,MatrixName)
     groupsName = (lines[1][lines[1].rfind(":")+2:len(lines[1])-1])
+    REFRENCE = (lines[6][lines[6].rfind(":")+2:len(lines[6])-1])
 
     g = groups(r,open(groupsName,'r'))
     groupNames = list(g.grpDict.keys())
+
     if(uUnGrouped == "false"):
         fe = ewhole(g.getAllGrouped(),matrix,freq_ran)
     else:
@@ -242,10 +260,10 @@ def main():
     for groupN in groupNames:
         ge = grpent(g.getGroup(groupN)[0],g.getGroup(groupN)[1],g.getAllGrouped(),freq_ran)
         out = open(groupN + ".csv",'w')
-        out.write("Position,Family Entropy,Group Entropy,Partial Group Entropy,Partial Out Group Entropy,Highest Group AA,Highest Family AA\n")
+        out.write("Position,Family Entropy,Group Entropy,Partial Group Entropy,Partial Out Group Entropy,Highest Group AA,Highest Family AA,Ref. Position\n")
         for i in range(len(fe[0])):
             if fe[0][i] == False:
-                out.write(str(i+1)+','+str(fe[2][i]) + ','+str(ge[2][i]) + ','+str(ge[1][i]) + ','+str(ge[0][i]) + ','+str(ge[3][i]) +','+str(fe[1][i])+"\n")   
+                out.write(str(i+1)+','+str(fe[2][i]) + ','+str(ge[2][i]) + ','+str(ge[1][i]) + ','+str(ge[0][i]) + ','+str(ge[3][i]) +','+str(fe[1][i])+','+str(ge[5][i])+"\n")   
     sys.stdout.write("GEnt Complete in " + str(time.time()-start_time) + " seconds\n")
     out = open("GEnt.out",'w')
     out.write("GEnt.py\n")
