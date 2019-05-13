@@ -3,7 +3,6 @@
 """
 Created on Tue Oct  9 15:44:24 2018
 @author: skylar
-Usage: python GEnt.py name.settings
 REQUIRES: lg.dat 
 """
 
