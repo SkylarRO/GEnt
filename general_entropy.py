@@ -3,13 +3,12 @@
 """
 Created on Tue Oct  9 15:44:24 2018
 @author: skylar
-REQUIRES: lg.dat 
+REQUIRES: lg.dat
 """
 
 import argparse
 import math
 import time
-import os
 import sys
 from Bio import AlignIO               # Read fasta files
 
@@ -55,24 +54,24 @@ def grpent(in_grp, out_grp):
             out_ent[i] += out_grp["aa_ajus"][i][j]*math.log(out_grp["aa_ajus"][i][j]/in_grp["aa_ajus"][i][j], 2)
         tot_ent[i] = in_ent[i] + out_ent[i]
 
-    in_grp["in_ent"] =  in_ent
-    in_grp["out_ent"] =  out_ent
-    in_grp["tot_ent"] =  tot_ent
+    in_grp["in_ent"] = in_ent
+    in_grp["out_ent"] = out_ent
+    in_grp["tot_ent"] = tot_ent
 
 def ret_num(char_aa):
     """Converts char to a numerical representation of the Amino acid"""
     if char_aa == 'X':
         char_aa = 'A'
-    temp = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V']
+    temp = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '-', '.']
     str(char_aa).capitalize()
-    for i in range(20):
+    for i in range(21):
         if char_aa == temp[i]:
             aa_val = i
     return aa_val
 
 def ret_aa(int_ascii):
     """Converts numerical representation back to a char."""
-    temp = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V']
+    temp = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '-', '.']
     return temp[int_ascii]
 def get_raw(aln, ret):
     """Passes the gap percentages and Amino Acid counts back by reference."""
@@ -82,7 +81,7 @@ def get_raw(aln, ret):
     gap = [0]*col
     temp = ""
     num_gaps = 0
-    aa_ct = [[0]*20 for i in range(col)]
+    aa_ct = [[0]*22 for i in range(col)]
     for i in range(col):
         for j in range(rows):
             char = (aln[j].seq)[i]
@@ -259,7 +258,7 @@ def main():
                         help='Pseudocount Multiplier')
     parser.add_argument('RSequence', type=str,
                         help='Sequence to base positions on')
-    parser.add_argument('--gapScore', type=float, nargs='?', const=0,
+    parser.add_argument('gapScore', type=float,
                         help='Whether or not to count sequences outside of groups')
     global PC_MUL
     REFRENCE = parser.parse_args().RSequence
