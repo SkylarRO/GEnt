@@ -3,7 +3,6 @@
 """
 Created on Tue Oct  9 15:44:24 2018
 @author: skylar
-REQUIRES: lg.dat
 """
 
 import argparse
@@ -20,7 +19,9 @@ def ewhole(grp, r_prob, aln):
     """Calculates family entropy."""
     global GAPS
     col = len(aln[0].seq)
-    row = len(aln)
+    row = [len(aln)]*col
+    for i in range(col):
+        row[i] = row[i] * (1-grp["gap"][i])
     aa_p = [[0] * 20 for i in range(col)]
     aa_ajus = [[0] * 20 for i in range(col)]
     fam_ent = [0]*col
@@ -30,7 +31,7 @@ def ewhole(grp, r_prob, aln):
             if grp["gap"][i] > GAPS:
                 break
             aa_p[i][j] = grp["ps"][i]*float(r_prob[j])
-            aa_ajus[i][j] = row/(row+grp["ps"][i])*grp["aa_ct"][i][j]/row+grp["ps"][i]/(row+grp["ps"][i])*aa_p[i][j]/grp["ps"][i]
+            aa_ajus[i][j] = row[i] / (row[i] + grp["ps"][i])*grp["aa_ct"][i][j]/row[i]+grp["ps"][i]/(row[i]+grp["ps"][i])*aa_p[i][j]/grp["ps"][i]
     for i in range(col):
         for j in range(20):
             if grp["gap"][i] > GAPS:
@@ -64,7 +65,7 @@ def ret_num(char_aa):
         char_aa = 'A'
     temp = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '-', '.']
     str(char_aa).capitalize()
-    for i in range(21):
+    for i in range(22):
         if char_aa == temp[i]:
             aa_val = i
     return aa_val
@@ -148,6 +149,9 @@ def ajust_counts(sequences, odds, ret):
     aa_pc = ret["ps"]
     aa_ct = ret["aa_ct"]
     gap = ret["gap"]
+    row = [len(sequences)]*col
+    for i in range(col):
+        row[i] = row[i] * (1-gap[i])
     aa_ps_tot = [[0] * 20 for i in range(col)]
     aa_ajus = [[0] * 20 for i in range(col)]
 
@@ -156,7 +160,7 @@ def ajust_counts(sequences, odds, ret):
             if gap[i] > GAPS:
                 break
             aa_ps_tot[i][j] = aa_pc[i]*float(odds[j]) #there is a much better forumla one might be able to use here.
-            aa_ajus[i][j] = len(sequences)/(len(sequences)+aa_pc[i])*aa_ct[i][j]/len(sequences)+aa_pc[i]/(len(sequences)+aa_pc[i])*aa_ps_tot[i][j]/aa_pc[i]
+            aa_ajus[i][j] = row[i]/(row[i]+aa_pc[i])*aa_ct[i][j]/row[i]+aa_pc[i]/(row[i]+aa_pc[i])*aa_ps_tot[i][j]/aa_pc[i]
     ret["aa_ps_tot"] = aa_ps_tot
     ret["aa_ajus"] = aa_ajus
 
@@ -202,7 +206,7 @@ class Groups():
         get_consensus(self.aln, self.dat_dict)
         get_counts(self.aln, self.dat_dict)
         ewhole(self.dat_dict, self.odds, self.aln)
-        
+
         for grp in list(self.grp_dict.keys()):
             in_grp = self.get_group(grp)[0]
             out_grp = self.get_group(grp)[1]
@@ -263,15 +267,18 @@ def main():
     global PC_MUL
     REFRENCE = parser.parse_args().RSequence
     PC_MUL = float(parser.parse_args().PsMultiplier)
-    matrix = [item.split() for item in open("lg.dat").read().split('\n')[:-1]][20]
+    matrix = {0.079066, 0.055941, 0.041977, 0.053052, 0.012937, 0.040767, 0.071586, 0.057337,
+              0.022355, 0.062157, 0.099081, 0.064600, 0.022951, 0.042302, 0.044040, 0.061197,
+              0.053287, 0.012066, 0.034155, 0.069147}
+    matrix = list(matrix)
     GAPS = parser.parse_args().gapScore
-    if GAPS == None:
+    if GAPS is None:
         GAPS = 0
     de = parser.parse_args().GrDel
     aln = open("aln.temp", "w")
     fasta = open(parser.parse_args().Alignment, 'r')
     file = ""
-    for line in fasta:  
+    for line in fasta:
         if not de in line:
             file += line
     aln.write(file)
@@ -294,7 +301,7 @@ def main():
                           str(g.grp_data_list[groupN + "_in"]["con"][i]) +',' +
                           str(g.dat_dict["con"][i])+',' +
                           str(ref_position()[i])+"\n")
-        
+
     sys.stdout.write("GEnt Complete in " + str(time.time()-start_time) + " seconds\n")
     out = open("GEnt.out", 'w')
     out.write("GEnt.py\n")
