@@ -11,10 +11,6 @@ import time
 import sys
 from Bio import AlignIO               # Read fasta files
 
-
-global PC_MUL
-global REFRENCE
-global GAPS
 def ewhole(grp, r_prob, aln):
     """Calculates family entropy."""
     global GAPS
